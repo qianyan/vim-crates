@@ -104,11 +104,21 @@ endfunction
 " Show latest version if it's outside of the given requirement.
 function! s:show(a, b) abort
   let has_wildcard = match(a:a, '\*') != -1
+  let has_caret = match(a:a, '\^') != -1
   let a = split(a:a, '\.')
   let b = split(a:b, '\.')
-  return has_wildcard ? s:show_wildcard(a, b) : s:show_caret(a, b)
+  if has_wildcard
+      return s:show_wildcard(a, b)
+  elseif has_caret
+      return s:show_caret(a, b)
+  else
+      return s:show_normal(a, b)
+  endif
 endfunction
-
+" Handle normal requirements
+function! s:show_normal(a, b) abort
+  return 1
+endfunction
 " Handle caret requirements.
 " ^1.2.3  :=  >=1.2.3 <2.0.0
 " ^1.2    :=  >=1.2.0 <2.0.0
@@ -120,6 +130,7 @@ endfunction
 " ^0      :=  >=0.0.0 <1.0.0
 function! s:show_caret(a, b) abort
   for i in range(min([len(a:a), 3]))
+    if a:a[i] == '^' | break | endif
     let a = str2nr(a:a[i])
     let b = str2nr(a:b[i])
     if a == 0 && b == 0 | continue | endif
